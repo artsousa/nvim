@@ -222,6 +222,16 @@ vim.keymap.set(
 	{ desc = "Open Yazi file manager" }
 )
 
+-- terminal exit mode --
+vim.keymap.set("t", "<Esc><Esc>", "<C-\\><C-n>")
+
+
+-- resize window -- 
+vim.keymap.set("n", ">", "<C-w>>")
+vim.keymap.set("n", "<", "<C-w><")
+
+
+-- window navigation -- 
 vim.keymap.set("n", "<C-h>", "<C-w>h")
 vim.keymap.set("n", "<C-j>", "<C-w>j")
 vim.keymap.set("n", "<C-k>", "<C-w>k")
