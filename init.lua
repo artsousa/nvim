@@ -13,7 +13,7 @@ end
 
 vim.opt.rtp:prepend(lazypath)
 vim.opt.number = true
-vim.opt.relativenumber = false
+vim.opt.relativenumber = true
 vim.opt.expandtab = true
 vim.opt.shiftwidth = 4 
 vim.opt.tabstop = 4
@@ -24,6 +24,19 @@ vim.opt.termguicolors = true
 vim.opt.grepprg = "rg --vimgrep"
 vim.opt.grepformat = "%f:%l:%c:%m"
 
+
+vim.g.clipboard = {
+  name = 'OSC 52',
+  copy = {
+    ['+'] = require('vim.ui.clipboard.osc52').copy('+'),
+    ['*'] = require('vim.ui.clipboard.osc52').copy('*'),
+  },
+  paste = {
+    ['+'] = function() require('vim.ui.clipboard.osc52').paste('+') end,
+    ['*'] = function() require('vim.ui.clipboard.osc52').paste('*') end,
+  },
+}
+vim.opt.clipboard = "unnamedplus"
 
 
 require("lazy").setup({
@@ -49,7 +62,6 @@ require("lazy").setup({
     { "nvim-lualine/lualine.nvim" },
 
     -- Visual 
-    
     {
         'projekt0n/github-nvim-theme',
         name = 'github-theme',
@@ -64,6 +76,18 @@ require("lazy").setup({
         end,
     },  
 
+    
+    -- nvim-surround 
+    {
+        "kylechui/nvim-surround",
+        version = "*", -- Use for stability; omit to use `main` branch for the latest features
+        event="VeryLazy", 
+        config = function()
+            require("nvim-surround").setup({
+                -- Configuration here, or leave empty to use defaults
+            })
+        end
+    }, 
 
     -- Syntax highlighting
     {
@@ -151,6 +175,7 @@ vim.keymap.set("n", "<leader>ff", builtin.find_files)
 vim.keymap.set("n", "<leader>fg", builtin.live_grep)
 vim.keymap.set("n", "<leader>fb", builtin.buffers)
 
+
 vim.api.nvim_create_autocmd('FileType', {
   pattern = { '<filetype>' },
   callback = function() vim.treesitter.start() end,
@@ -163,13 +188,15 @@ require("telescope").setup({
 			i = {
 				["<C-v>"] = false, -- disable default
 				["<C-x>"] = false, -- disable default
-				
+		        ["<C-d>"] = actions.delete_buffer + actions.move_to_top, 
+
 				["<C-x>"] = actions.select_vertical,
 				["<C-b>"] = actions.select_horizontal,
 			},
 			n = {
 				["<C-v>"] = false, -- disable default
 				["<C-x>"] = false, -- disable default
+                ["d"] = actions.delete_buffer,
 
 				["<C-x>"] = actions.select_vertical,
 				["<C-b>"] = actions.select_horizontal,
@@ -223,12 +250,15 @@ vim.keymap.set(
 )
 
 -- terminal exit mode --
-vim.keymap.set("t", "<Esc><Esc>", "<C-\\><C-n>")
-
+vim.keymap.set("t", "<Esc>", "<C-\\><C-n>")
 
 -- resize window -- 
 vim.keymap.set("n", ">", "<C-w>>")
 vim.keymap.set("n", "<", "<C-w><")
+
+-- select and indent mode -- 
+vim.keymap.set("v", ">", ">gv")
+vim.keymap.set("v", "<", "<gv")
 
 
 -- window navigation -- 
@@ -236,7 +266,6 @@ vim.keymap.set("n", "<C-h>", "<C-w>h")
 vim.keymap.set("n", "<C-j>", "<C-w>j")
 vim.keymap.set("n", "<C-k>", "<C-w>k")
 vim.keymap.set("n", "<C-l>", "<C-w>l")
-
 vim.keymap.set("n", "<C-Left>", "<C-w>h")
 vim.keymap.set("n", "<C-Down>", "<C-w>j")
 vim.keymap.set("n", "<C-Up>", "<C-w>k")
