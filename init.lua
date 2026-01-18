@@ -110,6 +110,22 @@ require("lazy").setup({
 
     {
 	    "neovim/nvim-lspconfig",
+        dependencies = {
+            "williamboman/mason.nvim",
+            "williamboman/mason-lspconfig.nvim",
+        },
+
+        config = function()
+            require("mason").setup()
+            require("mason-lspconfig").setup({
+              ensure_installed = { "pyright", "lua_ls" } -- Servidores para Python e Lua
+            })
+
+            local lspconfig = require("lspconfig")
+            -- Configura o Pyright (essencial para seus scripts de ML)
+            lspconfig.pyright.setup({})
+          end,
+        }
     },
 
     {
