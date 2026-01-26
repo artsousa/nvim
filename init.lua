@@ -19,11 +19,9 @@ vim.opt.shiftwidth = 4
 vim.opt.tabstop = 4
 vim.opt.smartindent = true
 vim.opt.autoindent = true
-
 vim.opt.termguicolors = true
 vim.opt.grepprg = "rg --vimgrep"
 vim.opt.grepformat = "%f:%l:%c:%m"
-
 
 vim.g.clipboard = {
   name = 'OSC 52',
@@ -36,11 +34,10 @@ vim.g.clipboard = {
     ['*'] = function() require('vim.ui.clipboard.osc52').paste('*') end,
   },
 }
+
 vim.opt.clipboard = "unnamedplus"
 
-
 require("lazy").setup({
-
     -- File explorer
     { "nvim-tree/nvim-tree.lua" },
     
@@ -76,7 +73,40 @@ require("lazy").setup({
         end,
     },  
 
-    
+    -- debugger
+    {
+        "mfussenegger/nvim-dap",
+        dependencies = {
+            "rcarriga/nvim-dap-ui",
+            "mfussenegger/nvim-dap-python",
+            "nvim-neotest/nvim-nio",
+        },
+        config = function()
+            local dap = require("dap")
+            local dapui = require("dapui")
+
+            dapui.setup()
+
+            -- Configuração para Python
+            -- O caminho deve apontar para o python onde o debugpy está instalado
+            require("dap-python").setup("python3") 
+
+            -- Abrir/Fechar UI automaticamente
+            dap.listeners.after.event_initialized["dapui_config"] = function() dapui.open() end
+            dap.listeners.before.event_terminated["dapui_config"] = function() dapui.close() end
+            dap.listeners.before.event_exited["dapui_config"] = function() dapui.close() end
+
+            -- Atalhos de Teclado
+            vim.keymap.set('n', '<F5>', function() dap.continue() end)
+            vim.keymap.set('n', '<F6>', function() dap.step_over() end)
+            vim.keymap.set('n', '<F7>', function() dap.step_into() end)
+            vim.keymap.set('n', '<leader>b', function() dap.toggle_breakpoint() end)
+            vim.keymap.set('n', '<leader>dr', function() dap.repl.open() end)
+            
+        end
+    }, 
+
+
     -- nvim-surround 
     {
         "kylechui/nvim-surround",
@@ -105,11 +135,27 @@ require("lazy").setup({
                     enable = true,
                 }
             }
-        end,
+        end
     },
-
+    
+    -- indentation guide -- 
     {
-	    "neovim/nvim-lspconfig",
+        "lukas-reineke/indent-blankline.nvim",
+        main = "ibl",
+        opts = {
+            indent = {
+              char = "·", -- Aqui você define o caractere (pode ser "┆", "│", "·")
+            },
+            scope = {
+              enabled = true, -- Destaca a indentação do bloco onde o cursor está
+              show_start = false,
+              show_end = false,
+            },
+        },
+    }, 
+    
+    {
+	"neovim/nvim-lspconfig",
         dependencies = {
             "williamboman/mason.nvim",
             "williamboman/mason-lspconfig.nvim",
@@ -121,11 +167,21 @@ require("lazy").setup({
               ensure_installed = { "pyright", "lua_ls" } -- Servidores para Python e Lua
             })
 
-            local lspconfig = require("lspconfig")
-            -- Configura o Pyright (essencial para seus scripts de ML)
-            lspconfig.pyright.setup({})
-          end,
-        }
+            vim.lsp.config.pyright = {
+                filetypes = {"python"},
+                on_attach = function(client, bufnr)
+                    local builtin = require('telescope.builtin')
+                    local opts = { noremap = true, silent = true, buffer = bufnr }
+
+                    -- Mapeamentos principais
+                    vim.keymap.set('n', 'gd', builtin.lsp_definitions, opts)
+                    vim.keymap.set('n', 'gr', builtin.lsp_references, opts)
+                    vim.keymap.set('n', '<leader>ds', builtin.lsp_document_symbols, opts)
+                    vim.keymap.set('n', '<leader>D', builtin.diagnostics, opts)
+                end 
+            }
+        end,
+        
     },
 
     {
@@ -141,7 +197,7 @@ require("lazy").setup({
 		    -- Snippets (optional but recommended)
 		    "L3MON4D3/LuaSnip",
 		    "saadparwaiz1/cmp_luasnip",
-	    },
+	    }
     },
 
 
@@ -149,13 +205,41 @@ require("lazy").setup({
 	    "mikavilpas/yazi.nvim",
 	    dependencies = {
 		    "nvim-lua/plenary.nvim",
-	    },
-    },
+	    }
+    }
 
 })
 
-vim.cmd('colorscheme github_dark_dimmed')
+vim.keymap.set('n', '<leader>dq', function()
+    require("dap").terminate()
+    require("dapui").close()
+    vim.cmd("silent! bd! [dap-repl]") 
+end, { desc = "Sair do Debugger e fechar REPL" })
 
+vim.api.nvim_create_user_command('ViewImage', function(opts)
+    -- opts.args contém a string que você digitou após o comando
+    local result_file = opts.args
+
+    -- Verifica se o arquivo existe antes de tentar chamar o Windows
+    if vim.fn.filereadable(result_file) == 1 then
+        -- No WSL, o powershell.exe consegue abrir arquivos se o caminho for relativo
+        -- ou se usarmos wslpath para converter para o formato C:\...
+        vim.fn.jobstart({ "powershell.exe", "-Command", "Start-Process " .. result_file }, { detach = true })
+    else
+        print("Erro: Arquivo '" .. result_file .. "' não encontrado.")
+    end
+end, { 
+    nargs = 1, -- Obriga a passar exatamente 1 argumento
+    complete = "file" -- Ativa o auto-complete de arquivos (TAB) ao digitar o comando
+})
+
+-- Apenas fechar/abrir a UI (sem matar o processo)
+vim.keymap.set('n', '<leader>du', function() 
+    require("dapui").toggle() 
+end, { desc = "Alternar Interface DAP" })
+
+
+vim.cmd('colorscheme github_dark_dimmed')
 vim.api.nvim_create_autocmd("FileType", {
 	pattern = "python",
 	callback = function()
@@ -276,6 +360,8 @@ vim.keymap.set("n", "<", "<C-w><")
 vim.keymap.set("v", ">", ">gv")
 vim.keymap.set("v", "<", "<gv")
 
+-- unselect  
+vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 
 -- window navigation -- 
 vim.keymap.set("n", "<C-h>", "<C-w>h")
