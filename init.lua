@@ -66,7 +66,14 @@ require("lazy").setup({
         priority = 1000, -- make sure to load this before all the other start plugins
         config = function()
             require('github-theme').setup({
-             -- ...
+            options = {
+                styles = {
+                    comments = 'italic', 
+                    keywords = 'bold',   -- Makes all keywords bold
+                    functions = 'bold',  -- Makes all functions bold
+                    variables = 'bold',  -- Keeps variables normal
+                },
+            }, 
         })
 
             vim.cmd('colorscheme github_dark')
@@ -121,8 +128,8 @@ require("lazy").setup({
 
             -- Abrir/Fechar UI automaticamente
             dap.listeners.after.event_initialized["dapui_config"] = function() dapui.open() end
-            dap.listeners.before.event_terminated["dapui_config"] = function() dapui.close() end
-            dap.listeners.before.event_exited["dapui_config"] = function() dapui.close() end
+            -- dap.listeners.before.event_terminated["dapui_config"] = function() dapui.close() end
+            -- dap.listeners.before.event_exited["dapui_config"] = function() dapui.close() end
 
             -- Atalhos de Teclado
             vim.keymap.set('n', '<F5>', function() dap.continue() end)
@@ -192,7 +199,7 @@ require("lazy").setup({
         config = function()
             require("mason").setup()
             require("mason-lspconfig").setup({
-              ensure_installed = { "pyright", "lua_ls" } -- Servidores para Python e Lua
+              ensure_installed = { "pyright", "lua_ls", } -- Servidores para Python e Lua
             })
 
             vim.lsp.config.pyright = {
@@ -208,9 +215,25 @@ require("lazy").setup({
                     vim.keymap.set('n', '<leader>D', builtin.diagnostics, opts)
                 end 
             }
+
+            vim.lsp.config.ruff = {
+                filetypes = { "python" },
+                cmd = { "ruff", "server" },
+                on_attach = function(client, bufnr)
+                    local builtin = require('telescope.builtin')
+                    local opts = { noremap = true, silent = true, buffer = bufnr }
+
+                    -- Mesmos mapeamentos, caso ainda nao estejam definidos
+                    vim.keymap.set('n', 'gd', builtin.lsp_definitions, opts)
+                    vim.keymap.set('n', 'gr', builtin.lsp_references, opts)
+                    vim.keymap.set('n', '<leader>ds', builtin.lsp_document_symbols, opts)
+                    vim.keymap.set('n', '<leader>D', builtin.diagnostics, opts)
+                end
+            }
         end,
         
     },
+
 
     {
 	    "hrsh7th/nvim-cmp",
@@ -237,6 +260,7 @@ require("lazy").setup({
     }
 
 })
+
 
 vim.keymap.set('n', '<leader>dq', function()
     require("dap").terminate()
@@ -278,14 +302,20 @@ vim.api.nvim_create_autocmd("FileType", {
 })
 
 local capabilities = require("cmp_nvim_lsp").default_capabilities()
+local function start_lsp(name, config)
+    vim.lsp.start(vim.tbl_deep_extend("force", {
+        name = name,
+        capabilities = capabilities,
+    }, config or {}))
+end
 vim.api.nvim_create_autocmd("FileType", {
 	pattern = "python",
 	callback = function()
-		vim.lsp.start({
-			name = "pyright",
+		start_lsp("pyright", vim.lsp.config.pyright or {
 			cmd = { "pyright-langserver", "--stdio" },
-			capabilities = capabilities,
 		})
+
+		start_lsp("ruff", vim.lsp.config.ruff)
 	end,
 })
 
@@ -400,7 +430,6 @@ vim.keymap.set("n", "<C-Left>", "<C-w>h")
 vim.keymap.set("n", "<C-Down>", "<C-w>j")
 vim.keymap.set("n", "<C-Up>", "<C-w>k")
 vim.keymap.set("n", "<C-Right>", "<C-w>l")
-
 
 
 
