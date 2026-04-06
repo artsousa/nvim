@@ -66,7 +66,7 @@ require("lazy").setup({
         priority = 1000, -- make sure to load this before all the other start plugins
         config = function()
             require('github-theme').setup({
-                options = {
+		options = {
                     compile_path = vim.fn.stdpath('cache') .. '/github-theme',
                     transparent = true,
                     hide_end_of_buffer = true,
@@ -84,12 +84,40 @@ require("lazy").setup({
                         strings = 'NONE',
                         types = 'bold',
                     },
-                } 
-        })
+	    	}
+	    })
 
             vim.cmd('colorscheme github_dark')
         end,
     },  
+
+    -- codex 
+    {
+        'kkrampis/codex.nvim',
+        lazy = true,
+        cmd = { 'Codex', 'CodexToggle' }, -- Optional: Load only on command execution
+        keys = {
+            {
+                '<leader>cc', -- Change this to your preferred keybinding
+                function() require('codex').toggle() end,
+                desc = 'Toggle Codex popup or side-panel',
+                mode = { 'n', 't' }
+            },
+        },
+        opts = {
+            keymaps = {
+                toggle = nil, -- Keybind to toggle Codex window (Disabled by default, watch out for conflicts)
+                quit = '<C-q>', -- Keybind to close the Codex window (default: Ctrl + q)
+            },         -- Disable internal default keymap (<leader>cc -> :CodexToggle)
+            border      = 'rounded',  -- Options: 'single', 'double', or 'rounded'
+            width       = 0.8,        -- Width of the floating window (0.0 to 1.0)
+            height      = 0.8,        -- Height of the floating window (0.0 to 1.0)
+            model       = nil,        -- Optional: pass a string to use a specific model (e.g., 'o3-mini')
+            autoinstall = true,       -- Automatically install the Codex CLI if not found
+            panel       = false,      -- Open Codex in a side-panel (vertical split) instead of floating window
+            use_buffer  = false,      -- Capture Codex stdout into a normal buffer instead of a terminal buffer
+        },
+    },
 
     -- debugger
     {
@@ -209,7 +237,7 @@ require("lazy").setup({
         config = function()
             require("mason").setup()
             require("mason-lspconfig").setup({
-              ensure_installed = { "pyright", "lua_ls" } -- Servidores para Python e Lua
+              ensure_installed = { "pyright", "lua_ls", } -- Servidores para Python e Lua
             })
 
             vim.lsp.config.pyright = {
@@ -225,9 +253,25 @@ require("lazy").setup({
                     vim.keymap.set('n', '<leader>D', builtin.diagnostics, opts)
                 end 
             }
+
+            vim.lsp.config.ruff = {
+                filetypes = { "python" },
+                cmd = { "ruff", "server" },
+                on_attach = function(client, bufnr)
+                    local builtin = require('telescope.builtin')
+                    local opts = { noremap = true, silent = true, buffer = bufnr }
+
+                    -- Mesmos mapeamentos, caso ainda nao estejam definidos
+                    vim.keymap.set('n', 'gd', builtin.lsp_definitions, opts)
+                    vim.keymap.set('n', 'gr', builtin.lsp_references, opts)
+                    vim.keymap.set('n', '<leader>ds', builtin.lsp_document_symbols, opts)
+                    vim.keymap.set('n', '<leader>D', builtin.diagnostics, opts)
+                end
+            }
         end,
         
     },
+
 
     {
 	    "hrsh7th/nvim-cmp",
@@ -254,6 +298,7 @@ require("lazy").setup({
     }
 
 })
+
 
 vim.keymap.set('n', '<leader>dq', function()
     require("dap").terminate()
@@ -295,14 +340,20 @@ vim.api.nvim_create_autocmd("FileType", {
 })
 
 local capabilities = require("cmp_nvim_lsp").default_capabilities()
+local function start_lsp(name, config)
+    vim.lsp.start(vim.tbl_deep_extend("force", {
+        name = name,
+        capabilities = capabilities,
+    }, config or {}))
+end
 vim.api.nvim_create_autocmd("FileType", {
 	pattern = "python",
 	callback = function()
-		vim.lsp.start({
-			name = "pyright",
+		start_lsp("pyright", vim.lsp.config.pyright or {
 			cmd = { "pyright-langserver", "--stdio" },
-			capabilities = capabilities,
 		})
+
+		start_lsp("ruff", vim.lsp.config.ruff)
 	end,
 })
 
@@ -417,7 +468,6 @@ vim.keymap.set("n", "<C-Left>", "<C-w>h")
 vim.keymap.set("n", "<C-Down>", "<C-w>j")
 vim.keymap.set("n", "<C-Up>", "<C-w>k")
 vim.keymap.set("n", "<C-Right>", "<C-w>l")
-
 
 
 
