@@ -254,9 +254,9 @@ require("lazy").setup({
                 end 
             }
 
-            vim.lsp.config.ruff = {
+            vim.lsp.config = {
                 filetypes = { "python" },
-                cmd = { "ruff", "server" },
+                cmd = { "server" },
                 on_attach = function(client, bufnr)
                     local builtin = require('telescope.builtin')
                     local opts = { noremap = true, silent = true, buffer = bufnr }
@@ -352,8 +352,6 @@ vim.api.nvim_create_autocmd("FileType", {
 		start_lsp("pyright", vim.lsp.config.pyright or {
 			cmd = { "pyright-langserver", "--stdio" },
 		})
-
-		start_lsp("ruff", vim.lsp.config.ruff)
 	end,
 })
 
