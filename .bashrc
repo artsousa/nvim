@@ -6,6 +6,9 @@ export CUDA_HOME=/usr/local/cuda-13.0
 export PATH=$CUDA_HOME/bin:$PATH
 export LD_LIBRARY_PATH=$CUDA_HOME/lib64:$LD_LIBRARY_PATH
 
+export CODEX_HOME=~/.codex
+
+
 # If not running interactively, don't do anything
 case $- in
     *i*) ;;
@@ -64,7 +67,7 @@ if [ "$color_prompt" = yes ]; then
     # \[\033[01;35m\]\t
     #PS1='${debian_chroot:+($debian_chroot)}\[\033[01;34m\]\t \[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
     # PS1='${debian_chroot:+($debian_chroot)}\[\033[01;35m\]\t \[\033[0;31m\]\u\[\033[00m\]:\w \[\033[0;31m\]\$? \\$\[$(tput sgr0)\]\[\033[00m\] '
-    PS1='${debian_chroot:+($debian_chroot)} \[\033[00;31m\] ~/\W \[\033[0;37m\](\u) \[\033[01;31m\]\$ \[$(tput sgr0)\]'
+    PS1='${debian_chroot:+($debian_chroot)}\[\033[00;31m\]~/\W \[\033[0;37m\](\u) \[\033[01;31m\]\$ \[$(tput sgr0)\]'
 else
     PS1='${debian_chroot:+($debian_chroot)}\u@\h:\w\$ '
 fi
@@ -73,7 +76,7 @@ unset color_prompt force_color_prompt
 # If this is an xterm set the title to user@host:dir
 case "$TERM" in
 xterm*|rxvt*)
-    PS1="\[\e]0;${debian_chroot:+($debian_chroot)}\u@\h: \w\a\]$PS1"
+    PS1="\[\e]0;${debian_chroot:+($debian_chroot)}\u@\h:\w\a\]$PS1"
     ;;
 *)
     ;;

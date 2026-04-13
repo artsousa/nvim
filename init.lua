@@ -1,6 +1,5 @@
 vim.g.mapleader = " "
 
--- Bootstrap lazy.nvim
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not vim.loop.fs_stat(lazypath) then
     vim.fn.system({
@@ -22,6 +21,8 @@ vim.opt.autoindent = true
 vim.opt.termguicolors = true
 vim.opt.grepprg = "rg --vimgrep"
 vim.opt.grepformat = "%f:%l:%c:%m"
+
+vim.keymap.set('n', '*', '*N', { noremap = true, silent = true })
 
 vim.g.clipboard = {
   name = 'OSC 52',
@@ -98,7 +99,7 @@ require("lazy").setup({
         cmd = { 'Codex', 'CodexToggle' }, -- Optional: Load only on command execution
         keys = {
             {
-                '<leader>cc', -- Change this to your preferred keybinding
+                '<leader>cg', -- Change this to your preferred keybinding
                 function() require('codex').toggle() end,
                 desc = 'Toggle Codex popup or side-panel',
                 mode = { 'n', 't' }
@@ -117,6 +118,102 @@ require("lazy").setup({
             panel       = false,      -- Open Codex in a side-panel (vertical split) instead of floating window
             use_buffer  = false,      -- Capture Codex stdout into a normal buffer instead of a terminal buffer
         },
+    },
+    
+    {
+        "coder/claudecode.nvim",
+        dependencies = { "folke/snacks.nvim" },
+        
+        -- Keys block stays outside so Lazy knows when to load the plugin
+        keys = {
+            {
+                '<leader>cc', "<cmd>ClaudeCodeFocus<cr>", desc = 'Toggle claudio popup', mode = { 'n', 'x' }
+            },
+            quit = '<C-q>',
+        },
+
+        -- Use config() instead of opts for complex setups
+        config = function()
+            -- 1. Extract the options
+            local my_snacks_opts = {
+                position = "float",
+                width = 0.9,
+                height = 0.9,
+                border = "rounded",
+                backdrop = 10,
+                keys = {
+                    term_normal = false, 
+                    claude_hide = {
+                        "<leader>cc", function() Snacks.terminal.toggle() end, mode = "t", desc = "Hide",
+                    },
+                    safe_escape = { "<Esc>", "<c-\\><c-n>", mode = "t", desc = "Enter Normal mode" },
+                }
+            }
+
+            -- 2. THE FIX: Store the active terminal state OUTSIDE the provider table
+            local active_term = nil
+
+            -- 3. Create a pure provider table with ONLY functions, no data state
+            local custom_snacks_provider = {}
+
+            custom_snacks_provider.setup = function(config) end
+
+            custom_snacks_provider.open = function(cmd_string, env_table, effective_config, focus)
+                local opts = vim.deepcopy(my_snacks_opts)
+                opts.env = env_table
+                -- Save to our hidden external variable
+                active_term = Snacks.terminal(cmd_string, opts)
+            end
+
+            custom_snacks_provider.close = function()
+                if active_term then 
+                    active_term:close() 
+                end
+            end
+
+            custom_snacks_provider.simple_toggle = function(cmd_string, env_table, effective_config)
+                local opts = vim.deepcopy(my_snacks_opts)
+                opts.env = env_table
+                active_term = Snacks.terminal.toggle(cmd_string, opts)
+            end
+
+            custom_snacks_provider.focus_toggle = function(cmd_string, env_table, effective_config)
+                local opts = vim.deepcopy(my_snacks_opts)
+                opts.env = env_table
+                active_term = Snacks.terminal.toggle(cmd_string, opts)
+            end
+
+            custom_snacks_provider.get_active_bufnr = function()
+                if active_term and active_term.buf and vim.api.nvim_buf_is_valid(active_term.buf) then
+                    return active_term.buf
+                end
+                return nil
+            end
+
+            custom_snacks_provider.is_available = function()
+                local ok, _ = pcall(require, "snacks")
+                return ok
+            end
+
+            -- 4. Call the plugin setup
+            require("claudecode").setup({
+                port_range = { min = 10000, max = 65535 },
+                auto_start = false,
+                log_level = "info",
+
+                start_insert = false,
+                auto_insert = false,
+                focus_after_send = false,
+                track_selection = true,
+                visual_demotion_delay_ms = 50,
+
+                terminal = {
+                    provider = custom_snacks_provider, 
+                    auto_close = false,
+                },
+            })
+        end, 
+
     },
 
     -- debugger
@@ -200,78 +297,66 @@ require("lazy").setup({
         },
     }, 
 
-    {
-        'kkrampis/codex.nvim',
-        lazy = true,
-        cmd = { 'Codex', 'CodexToggle' }, -- Optional: Load only on command execution
-        keys = {
-            {
-            '<leader>cc', -- Change this to your preferred keybinding
-            function() require('codex').toggle() end,
-            desc = 'Toggle Codex popup or side-panel',
-            mode = { 'n', 't' }
-            },
-        },
-        opts = {
-            keymaps     = {
-                toggle = nil, -- Keybind to toggle Codex window (Disabled by default, watch out for conflicts)
-                quit = '<C-q>', -- Keybind to close the Codex window (default: Ctrl + q)
-            },         -- Disable internal default keymap (<leader>cc -> :CodexToggle)
-            border      = 'rounded',  -- Options: 'single', 'double', or 'rounded'
-            width       = 0.8,        -- Width of the floating window (0.0 to 1.0)
-            height      = 0.8,        -- Height of the floating window (0.0 to 1.0)
-            model       = nil,        -- Optional: pass a string to use a specific model (e.g., 'o3-mini')
-            autoinstall = true,       -- Automatically install the Codex CLI if not found
-            panel       = false,      -- Open Codex in a side-panel (vertical split) instead of floating window
-            use_buffer  = false,      -- Capture Codex stdout into a normal buffer instead of a terminal buffer
-        },
-    },
 
     {
-	"neovim/nvim-lspconfig",
+        "neovim/nvim-lspconfig",
         dependencies = {
             "williamboman/mason.nvim",
             "williamboman/mason-lspconfig.nvim",
         },
-
         config = function()
+            
+            -- 1. Setup Mason to manage external server binaries
             require("mason").setup()
             require("mason-lspconfig").setup({
-              ensure_installed = { "pyright", "lua_ls", } -- Servidores para Python e Lua
+                ensure_installed = { "pyright", "lua_ls" }
             })
 
-            vim.lsp.config.pyright = {
-                filetypes = {"python"},
-                on_attach = function(client, bufnr)
-                    local builtin = require('telescope.builtin')
-                    local opts = { noremap = true, silent = true, buffer = bufnr }
-
-                    -- Mapeamentos principais
-                    vim.keymap.set('n', 'gd', builtin.lsp_definitions, opts)
-                    vim.keymap.set('n', 'gr', builtin.lsp_references, opts)
-                    vim.keymap.set('n', '<leader>ds', builtin.lsp_document_symbols, opts)
-                    vim.keymap.set('n', '<leader>D', builtin.diagnostics, opts)
-                end 
-            }
-
-            vim.lsp.config = {
+            -- 2. Configure Pyright using the new 0.11+ Core API
+            vim.lsp.config('pyright', {
                 filetypes = { "python" },
-                cmd = { "server" },
-                on_attach = function(client, bufnr)
+                settings = {
+                    python = {
+                        analysis = {
+                            autoSearchPaths = true,
+                            useLibraryCodeForTypes = true,
+                            diagnosticMode = "workspace",
+                        },
+                    },
+                },
+            })
+
+            -- 3. Configure Lua LS (since you have it in ensure_installed)
+            vim.lsp.config('lua_ls', {
+                settings = {
+                    Lua = {
+                        diagnostics = { globals = { 'vim' } },
+                        workspace = { checkThirdParty = false },
+                    },
+                },
+            })
+
+            -- 4. Global Keybindings (The modern way via Autocmd)
+            vim.api.nvim_create_autocmd('LspAttach', {
+                callback = function(args)
+                    local bufnr = args.buf
                     local builtin = require('telescope.builtin')
                     local opts = { noremap = true, silent = true, buffer = bufnr }
 
-                    -- Mesmos mapeamentos, caso ainda nao estejam definidos
+                    -- Telescope-specific Mappings
                     vim.keymap.set('n', 'gd', builtin.lsp_definitions, opts)
                     vim.keymap.set('n', 'gr', builtin.lsp_references, opts)
                     vim.keymap.set('n', '<leader>ds', builtin.lsp_document_symbols, opts)
                     vim.keymap.set('n', '<leader>D', builtin.diagnostics, opts)
-                end
-            }
+                    
+                    -- Standard LSP Mappings
+                    vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
+                    vim.keymap.set('n', '<leader>rn', vim.lsp.buf.rename, opts)
+                    vim.keymap.set('n', '<leader>ca', vim.lsp.buf.code_action, opts)
+                end,
+            })
         end,
-        
     },
-
 
     {
 	    "hrsh7th/nvim-cmp",
