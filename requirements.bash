@@ -3,21 +3,21 @@
 set -e
 
 echo "== Updating system =="
-sudo apt update
+apt update
 
-echo "== Installing core tools =="
-sudo apt install -y \
-  git \
-  curl \
-  ripgrep \
-  build-essential \
-  nodejs \
-  npm \
-  python3 \
-  python3-pip
-
-echo "== Installing Neovim =="
-sudo apt install -y neovim
+echo "== Installing neovim requirements =="
+apt install -y \
+    git \
+    curl \
+    ripgrep \
+    build-essential \
+    nodejs \
+    npm \
+    python3 \
+    python3-pip \
+    ninja-build \
+    gettext \
+    cmake 
 
 echo "== Installing Pyright (Python LSP) =="
 npm install -g pyright
@@ -29,8 +29,14 @@ if ! command -v rustup &>/dev/null; then
 fi
 
 echo "== Installing Yazi =="
-cargo install --locked yazi-fm yazi-cli
+cargo install --force yazi-build
+
+echo "== Installing Neovim =="
+git clone https://github.com/neovim/neovim && cd neovim/
+git checkout stable
+make CMAKE_BUILD_TYPE=RelWithDebInfo && make install
+cd ..
 
 echo "== Done =="
-echo "Restart your terminal, then open Neovim with: nvim"
+echo "Restart your terminal, if docker: /usr/local/bin/nvim/"
 

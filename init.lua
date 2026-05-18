@@ -22,7 +22,7 @@ vim.opt.termguicolors = true
 vim.opt.grepprg = "rg --vimgrep"
 vim.opt.grepformat = "%f:%l:%c:%m"
 
-vim.keymap.set('n', '*', '*N', { noremap = true, silent = true })
+-- vim.keymap.set('n', '*', '*N', { noremap = true, silent = true })
 
 vim.g.clipboard = {
   name = 'OSC 52',
