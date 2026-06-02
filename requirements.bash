@@ -37,6 +37,7 @@ git checkout stable
 make CMAKE_BUILD_TYPE=RelWithDebInfo && make install
 cd ..
 
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
 echo "== Done =="
-echo "Restart your terminal, if docker: /usr/local/bin/nvim/"
 
