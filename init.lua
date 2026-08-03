@@ -430,6 +430,9 @@ vim.keymap.set('n', '<leader>du', function() require("dapui").toggle() end, { de
 vim.keymap.set("t", "<Esc>", "<C-\\><C-n>")
 vim.keymap.set("n", ">", "<C-w>>")
 vim.keymap.set("n", "<", "<C-w><")
+vim.keymap.set("n", "+", "<C-w>+")
+vim.keymap.set("n", "-", "<C-w>-")
+
 vim.keymap.set("v", ">", ">gv")
 vim.keymap.set("v", "<", "<gv")
 vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
