@@ -430,8 +430,10 @@ vim.keymap.set('n', '<leader>du', function() require("dapui").toggle() end, { de
 vim.keymap.set("t", "<Esc>", "<C-\\><C-n>")
 vim.keymap.set("n", ">", "<C-w>>")
 vim.keymap.set("n", "<", "<C-w><")
-vim.keymap.set("n", "+", "<C-w>+")
-vim.keymap.set("n", "-", "<C-w>-")
+-- Decrease horizontal split height
+vim.keymap.set("n", "_", "<cmd>resize -1<CR>")
+-- Increase horizontal split height
+vim.keymap.set("n", "+", "<cmd>resize +1<CR>")
 
 vim.keymap.set("v", ">", ">gv")
 vim.keymap.set("v", "<", "<gv")
