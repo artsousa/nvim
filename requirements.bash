@@ -22,6 +22,10 @@ apt install -y \
 echo "== Installing Pyright (Python LSP) =="
 npm install -g pyright
 
+echo "== Installing Codex =="
+apt install bubblewrap
+curl -fsSL https://chatgpt.com/codex/install.sh | sh
+
 echo "== Installing Rust (for Yazi) =="
 if ! command -v rustup &>/dev/null; then
   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y

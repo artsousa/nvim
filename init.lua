@@ -112,7 +112,7 @@ require("lazy").setup({
         lazy = true,
         cmd = { 'Codex', 'CodexToggle' },
         keys = {
-            { '<leader>cg', function() require('codex').toggle() end, desc = 'Toggle Codex popup', mode = { 'n', 't' } },
+            { '<leader>cc', function() require('codex').toggle() end, desc = 'Toggle Codex popup', mode = { 'n', 't' } },
         },
         opts = {
             keymaps = {
@@ -127,75 +127,6 @@ require("lazy").setup({
             panel       = false,
             use_buffer  = false,
         },
-    },
-    
-    -- Claude Code 
-    {
-        "coder/claudecode.nvim",
-        dependencies = { "folke/snacks.nvim" },
-        keys = {
-            { '<leader>cc', "<cmd>ClaudeCodeFocus<cr>", desc = 'Toggle claudio popup', mode = { 'n', 'x' } },
-        },
-        config = function()
-            local my_snacks_opts = {
-                position = "float",
-                width = 0.9,
-                height = 0.9,
-                border = "rounded",
-                backdrop = 10,
-                keys = {
-                    term_normal = false, 
-                    claude_hide = { "<leader>cc", function() Snacks.terminal.toggle() end, mode = "t", desc = "Hide" },
-                    safe_escape = { "<Esc>", "<c-\\><c-n>", mode = "t", desc = "Enter Normal mode" },
-                }
-            }
-
-            local active_term = nil
-            local custom_snacks_provider = {}
-            custom_snacks_provider.setup = function(config) end
-            custom_snacks_provider.open = function(cmd_string, env_table, _, _)
-                local opts = vim.deepcopy(my_snacks_opts)
-                opts.env = env_table
-                active_term = Snacks.terminal(cmd_string, opts)
-            end
-            custom_snacks_provider.close = function()
-                if active_term then active_term:close() end
-            end
-            custom_snacks_provider.simple_toggle = function(cmd_string, env_table, _)
-                local opts = vim.deepcopy(my_snacks_opts)
-                opts.env = env_table
-                active_term = Snacks.terminal.toggle(cmd_string, opts)
-            end
-            custom_snacks_provider.focus_toggle = function(cmd_string, env_table, _)
-                local opts = vim.deepcopy(my_snacks_opts)
-                opts.env = env_table
-                active_term = Snacks.terminal.toggle(cmd_string, opts)
-            end
-            custom_snacks_provider.get_active_bufnr = function()
-                if active_term and active_term.buf and vim.api.nvim_buf_is_valid(active_term.buf) then
-                    return active_term.buf
-                end
-                return nil
-            end
-            custom_snacks_provider.is_available = function()
-                return pcall(require, "snacks")
-            end
-
-            require("claudecode").setup({
-                port_range = { min = 10000, max = 65535 },
-                auto_start = false,
-                log_level = "info",
-                start_insert = false,
-                auto_insert = false,
-                focus_after_send = false,
-                track_selection = true,
-                visual_demotion_delay_ms = 50,
-                terminal = {
-                    provider = custom_snacks_provider, 
-                    auto_close = false,
-                },
-            })
-        end, 
     },
 
     -- Debugger (DAP)
