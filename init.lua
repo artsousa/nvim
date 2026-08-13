@@ -127,6 +127,30 @@ require("lazy").setup({
             panel       = false,
             use_buffer  = false,
         },
+        
+        config = function(_, opts)
+            require('codex').setup(opts)
+
+            vim.api.nvim_create_autocmd("FileType", {
+                pattern = "codex",
+
+                callback = function(event)
+
+                    -- Double <Esc> exits Terminal insert mode in Neovim
+                    vim.keymap.set('t', '<Esc><Esc>', [[<C-\><C-n>]], { buffer = event.buf, silent = true, nowait = true })
+
+                    -- Single <Esc> sends raw Escape to the CLI app (stays in terminal mode)
+                    vim.keymap.set('t', '<Esc>', function()
+                        local chan = vim.bo[event.buf].channel
+
+                        if chan and chan > 0 then
+                            vim.api.nvim_chan_send(chan, "\27")
+                        end
+                    end, { buffer = event.buf, silent = true })
+
+                end,
+            })
+        end,
     },
 
     -- Debugger (DAP)
