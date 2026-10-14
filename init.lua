@@ -399,10 +399,23 @@ vim.keymap.set("n", "<C-h>", "<C-w>h")
 vim.keymap.set("n", "<C-j>", "<C-w>j")
 vim.keymap.set("n", "<C-k>", "<C-w>k")
 vim.keymap.set("n", "<C-l>", "<C-w>l")
-vim.keymap.set("n", "<C-Left>", "<C-w>h")
-vim.keymap.set("n", "<C-Down>", "<C-w>j")
-vim.keymap.set("n", "<C-Up>", "<C-w>k")
-vim.keymap.set("n", "<C-Right>", "<C-w>l")
+
+-- Leave terminal-input mode before moving between windows.
+vim.keymap.set("t", "<C-h>", "<C-\\><C-n><C-w>h")
+vim.keymap.set("t", "<C-j>", "<C-\\><C-n><C-w>j")
+vim.keymap.set("t", "<C-k>", "<C-\\><C-n><C-w>k")
+vim.keymap.set("t", "<C-l>", "<C-\\><C-n><C-w>l")
+vim.keymap.set("t", "<C-Left>", "<S-h>")
+vim.keymap.set("t", "<C-Right>", "<S-l>")
+vim.keymap.set("t", "<S-Left>", "<C-Left>")
+vim.keymap.set("t", "<S-Right>", "<C-Right>")
+
+-- Search for the previous exact occurrence without moving the cursor.
+vim.keymap.set("n", "#", function()
+    local cursor = vim.api.nvim_win_get_cursor(0)
+    vim.cmd("normal! #")
+    vim.api.nvim_win_set_cursor(0, cursor)
+end, { silent = true })
 
 -- WSL/Windows Interoperability Image Utility Command
 vim.api.nvim_create_user_command('ViewImage', function(opts)
