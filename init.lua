@@ -148,6 +148,15 @@ require("lazy").setup({
                         end
                     end, { buffer = event.buf, silent = true })
 
+                    -- <C-j> sends raw newline (\n) to the CLI app, bypassing Neovim window navigation
+                    vim.keymap.set('t', '<C-j>', function()
+                        local chan = vim.bo[event.buf].channel
+                        
+                        if chan and chan > 0 then
+                            vim.api.nvim_chan_send(chan, "\n")
+                        end
+                    end, { buffer = event.buf, silent = true })
+
                 end,
             })
         end,
