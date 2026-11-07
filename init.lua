@@ -129,13 +129,34 @@ require("lazy").setup({
         },
         
         config = function(_, opts)
+
             require('codex').setup(opts)
 
-            vim.api.nvim_create_autocmd("FileType", {
+            -- Force line numbers on Codex terminal windows, overriding Neovim terminal defaults
+            vim.api.nvim_create_autocmd({ "TermOpen", "FileType", "BufWinEnter", "WinEnter" }, {
+                pattern = "*",
+                callback = function(event)
+                    local is_codex = vim.bo[event.buf].filetype == "codex" 
+                        or string.match(vim.api.nvim_buf_get_name(event.buf), "codex")
+
+                    if is_codex then
+                        vim.schedule(function()
+                            local win = vim.fn.bufwinid(event.buf)
+                            if win and win ~= -1 and vim.api.nvim_win_is_valid(win) then
+                                vim.wo[win].number = true
+                                vim.wo[win].numberwidth = 4
+                                vim.wo[win].relativenumber = true
+                            end
+                        end)
+                    end
+                end,
+            })            
+
+            vim.api.nvim_create_autocmd({"FileType", "BufWinEnter"}, {
                 pattern = "codex",
 
                 callback = function(event)
-
+                    
                     -- Double <Esc> exits Terminal insert mode in Neovim
                     vim.keymap.set('t', '<Esc><Esc>', [[<C-\><C-n>]], { buffer = event.buf, silent = true, nowait = true })
 
