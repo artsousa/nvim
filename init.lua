@@ -120,7 +120,7 @@ require("lazy").setup({
                 quit = '<C-q>',
             },
             border      = 'rounded',
-            width       = 0.8,
+            width       = 0.85,
             height      = 0.8,
             model       = nil,
             autoinstall = true,
@@ -151,11 +151,21 @@ require("lazy").setup({
                     -- <C-j> sends raw newline (\n) to the CLI app, bypassing Neovim window navigation
                     vim.keymap.set('t', '<C-j>', function()
                         local chan = vim.bo[event.buf].channel
-                        
+
                         if chan and chan > 0 then
                             vim.api.nvim_chan_send(chan, "\n")
                         end
                     end, { buffer = event.buf, silent = true })
+                    
+                    -- Pass <C-u>, <C-d>, and mouse scrolling directly as <PageUp> / <PageDown> in Terminal mode
+                    vim.keymap.set('t', '<C-u>', '<PageUp>', { buffer = event.buf, silent = true })
+                    vim.keymap.set('t', '<C-d>', '<PageDown>', { buffer = event.buf, silent = true })
+                    vim.keymap.set('t', '<ScrollWheelUp>', '<PageUp>', { buffer = event.buf, silent = true })
+                    vim.keymap.set('t', '<ScrollWheelDown>', '<PageDown>', { buffer = event.buf, silent = true })
+
+                    -- Forward Normal mode <C-u> / <C-d> into terminal insert mode + <PageUp> / <PageDown>
+                    vim.keymap.set('n', '<C-u>', 'i<PageUp>', { buffer = event.buf, silent = true })
+                    vim.keymap.set('n', '<C-d>', 'i<PageDown>', { buffer = event.buf, silent = true })
 
                 end,
             })
